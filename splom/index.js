@@ -172,12 +172,13 @@ for (let j = 1; j < irisData.length; j++) {
 	groups[group].push(irisData[j].slice(0, -1).map(x => parseFloat(x)))
 }
 
-// draw(groups['Iris-setosa'], 'red')
-// draw(groups['Iris-versicolor'], 'green')
+draw(groups['Iris-setosa'], 'red')
+draw(groups['Iris-versicolor'], 'green')
 draw(groups['Iris-virginica'], 'blue')
 
+
 function draw (data, color) {
-	let dims = data[0].length
+	let m = data[0].length
 
 	data = flatten(data)
 
@@ -185,28 +186,29 @@ function draw (data, color) {
 
 	let w = regl._gl.drawingBufferWidth
 	let h = regl._gl.drawingBufferHeight
-	let m = dims
 	let n = Math.floor(data.length / m)
 	let iw = w / m
 	let ih = h / m
+	let pad = .05
 	let passes = []
+
 	for (let i = 0; i < m; i++) {
 		for (let j = 0; j < m; j++) {
-			let xOffset = i * n
-			let yOffset = j * n
-			let [lox, hix] = bounds(data.subarray(xOffset, xOffset + n))
-			let [loy, hiy] = bounds(data.subarray(yOffset, yOffset + n))
-
 			passes.push({
 				positions: {
-					x: {buffer, offset: xOffset, count: n},
-					y: {buffer, offset: yOffset, count: n}
+					// planar
+					// x: {buffer, offset: i * n, count: n},
+					// y: {buffer, offset: j * n, count: n}
+
+					// transposed
+					x: {buffer, offset: i, count: n, stride: m},
+					y: {buffer, offset: j, count: n, stride: m}
 				},
 				color,
 				borderSize: 0,
 				size: 8,
-				bounds: [lox, loy, hix, hiy],
-				viewport: [i * iw, j * ih, (i + 1) * iw, (j + 1) * ih]
+				bounds: [0, 0, 8, 8],
+				viewport: [i * iw + iw * pad, j * ih + ih * pad, (i + 1) * iw - iw * pad, (j + 1) * ih - ih * pad]
 			})
 		}
 	}
@@ -216,3 +218,16 @@ function draw (data, color) {
 }
 
 
+
+function transpose (data) {
+	let result = []
+	let cols = data[0].length
+	for (let r = 0; r < cols; r++) {
+		result[r] = []
+		for (let i = 0; i < data.length; i++) {
+			result[r].push(data[i][r])
+		}
+	}
+
+	return result
+}
